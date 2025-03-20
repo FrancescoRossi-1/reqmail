@@ -6,7 +6,7 @@
 
 ### **1️⃣ Clona la repository**
 ```sh
-git clone https://github.com/tuo-username/reqmail.git
+git clone [https://github.com/tuo-username/reqmail.git](https://github.com/FrancescoRossi-1/reqmail)
 cd reqmail
 ```
 
