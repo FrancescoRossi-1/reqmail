@@ -1,0 +1,15 @@
+# Ignora la cartella dell'ambiente virtuale
+venv/
+
+# Ignora il database SQLite
+instance/
+*.db
+*.sqlite3
+
+# Ignora file di cache Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignora file di log
+*.log

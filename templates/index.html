@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReqMail - Generatore di Email</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .btn-add {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            border-radius: 50%;
+            font-size: 24px;
+        }
+
+        .modal-content {
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">📧 ReqMail - Email Generator</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2 class="text-center my-4">Seleziona un template</h2>
+
+        <!-- Selettore Template -->
+        <div class="mb-3">
+            <label for="templateSelector" class="form-label">Scegli un template:</label>
+            <select id="templateSelector" class="form-select" onchange="fillTemplate()">
+                <option value="">-- Seleziona --</option>
+                {% for template in templates %}
+                <option value="{{ template.id }}">{{ template.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Input Placeholders -->
+        <div id="placeholders" class="mb-3"></div>
+
+        <!-- Anteprima Email -->
+        <div class="card p-4 mt-3">
+            <h4 class="text-primary">Anteprima Email</h4>
+            <p><strong>Oggetto:</strong> <span id="finalSubject"></span>
+                <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('finalSubject')">📋
+                    Copia</button>
+            </p>
+            <p><strong>Corpo:</strong></p>
+            <pre id="finalBody" class="p-3 bg-light"></pre>
+            <button class="btn btn-outline-primary btn-sm" onclick="copyToClipboard('finalBody')">📋 Copia</button>
+        </div>
+
+        <div class="mt-3" id="templateActions" style="display:none;">
+            <button class="btn btn-warning" onclick="openEditModal()">✏️ Modifica</button>
+            <form id="deleteTemplateForm" action="" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Sei sicuro di voler eliminare questo template?');">🗑️ Elimina</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottone per Aggiungere un Nuovo Template -->
+    <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addTemplateModal">➕</button>
+
+    <!-- Modale per Aggiungere un Template -->
+    <div class="modal fade" id="addTemplateModal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabel">Aggiungi Template Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTemplateForm" action="{{ url_for('add_template') }}" method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nome Template</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Oggetto</label>
+                            <input type="text" id="subject" name="subject" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="body" class="form-label">Corpo</label>
+                            <textarea id="body" name="body" class="form-control" rows="5" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="placeholders" class="form-label">Placeholder (separati da virgola)</label>
+                            <input type="text" id="placeholders" name="placeholders" class="form-control"
+                                placeholder="[NOME],[DATA]">
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">Salva</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale per modificare un template -->
+    <div class="modal fade" id="editTemplateModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modifica Template Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editTemplateForm" action="" method="POST">
+                        <input type="hidden" id="editTemplateId" name="template_id">
+                        <div class="mb-3">
+                            <label for="editName" class="form-label">Nome Template</label>
+                            <input type="text" id="editName" name="name" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editSubject" class="form-label">Oggetto</label>
+                            <input type="text" id="editSubject" name="subject" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editBody" class="form-label">Corpo</label>
+                            <textarea id="editBody" name="body" class="form-control" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPlaceholders" class="form-label">Placeholder (separati da virgola)</label>
+                            <input type="text" id="editPlaceholders" name="placeholders" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Salva Modifiche</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    <!-- Template Data (JSON) -->
+    <script type="application/json" id="templateData">
+        {{ templates | tojson }}
+    </script>
+
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Script -->
+        <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+
+</html>
